@@ -8,7 +8,7 @@ An event-study research project measuring abnormal returns of global stock indic
 
 ## Running the notebooks
 
-The notebooks are written for **Google Colab** — Cell 2 calls `from google.colab import drive; drive.mount(...)` and reads `DATA_PATH = '/content/drive/MyDrive/data/data_full.xlsx'`. To run locally, both that mount cell and `DATA_PATH` must be edited to point at a local Excel workbook (the local `data/full.xlsx` is a candidate but has not been verified to match the Colab sheet schema).
+The notebooks are run **locally**. Cell 2 reads `data/data_full.xlsx` (the canonical source — used by the analysis); `data/full.xlsx` is an older snapshot that may differ in sheet schema. Outputs are written to `data/event_study_results.xlsx`.
 
 Dependencies are installed in-cell by Cell 1: `%pip install -q pandas openpyxl numpy statsmodels arch matplotlib`. There is no `requirements.txt`/`pyproject.toml` — when adding deps, update Cell 1.
 
@@ -47,6 +47,18 @@ Crucially, **returns are read directly from the `Change %` column**, not compute
 `build_results_table()` / `build_all_tables()` / `export_to_excel()` flatten these per-model dicts into a single multi-sheet workbook. Sheet names are truncated to 31 chars (Excel limit) — keep model labels short when adding new ones.
 
 `fit_garch_subperiod()` (Cell 10) is a separate analysis: AR(1)-AR(9)+GARCH(1,1) on each index over hardcoded `SUB_PERIODS`, then a refitted model keeping only AR lags with `p < 0.05`. Output is regression summary tables, not an event study.
+
+## Specs and plans (active design work)
+
+`docs/superpowers/` accumulates design specs and implementation plans for non-trivial changes. Read these before starting work that touches the analysis pipeline.
+
+**Existing:**
+- `docs/superpowers/specs/2026-05-09-event-study-fixes-design.md` — fixes three SE/t-stat bugs (AM SE, GARCH per-day conditional σ, explicit SE return signature) and adds a CAAR aggregation panel with the BMP (1991) cross-sectional test. Locks in the anchor event (`2025-04-02` "Liberation Day"), the pre/post sub-period split (Pre-Liberation 2024-08-07 → 2025-04-01, Liberation-onward 2025-04-02 → 2026-03-20), the four CAAR windows (`[-5,-1]`, `[-1,+1]`, `[0,+5]`, `[-5,+5]`), and significance thresholds (* / ** / *** at |t|>1.645 / 1.96 / 2.576). **Implementation status: spec approved, notebook edits not yet applied** (Cell 8b not yet inserted; current `stock_analyze.ipynb` still has the old 12-cell layout).
+- `docs/superpowers/plans/2026-05-09-event-study-fixes.md` — task-by-task implementation plan for the spec above. Use `superpowers:executing-plans` or `superpowers:subagent-driven-development` to execute it.
+
+**Active brainstorm (not yet a spec):** Difference-in-Differences extension — country-level DiD using only the existing 6 indices, anchored on `2025-04-02`. Treatment/control assignment, outcome variable (raw returns vs. abnormal returns), and time-window length are still being decided.
+
+When extending the analysis, prefer adding a new spec under `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` rather than modifying the notebook ad-hoc.
 
 ## Gotchas
 
